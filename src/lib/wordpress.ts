@@ -182,9 +182,8 @@ const images =
       ? post.class_list.includes('featured')
       : woo?.featured ?? boolean(field(post, 'featured')),
   //  isSold: boolean(field(post, 'is_sold')),
-  isSold: post.class_list
-          ? post.class_list.includes('outofstock')
-          : woo?.featured ?? boolean(field(post, 'outofstock'))
+  isSold: post.class_list?.includes('outofstock') ?? false,
+          //: woo?.featured ?? boolean(field(post, 'outofstock'))
   };
 }
 
