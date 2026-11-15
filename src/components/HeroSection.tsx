@@ -7,7 +7,7 @@ import { Car } from 'lucide-react';
 
 export default function HeroSection() {
   return (
-    <div className="relative bg-[#172325]/90 backdrop-blur-md text-white overflow-hidden py-12 md:py-0 md:min-h-[calc(100vh-116px)] border-b border-[#1F7778] flex flex-col justify-center">
+    <div className="relative bg-[#172325]/90 backdrop-blur-md text-white overflow-hidden py-12 md:py-0 md:min-h-[calc(100vh-110px)] border-b border-[#1F7778] flex flex-col justify-center">
       {/* Background Video & Animated Ambient Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Background Loop Video */}
