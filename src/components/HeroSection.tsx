@@ -86,7 +86,7 @@ export default function HeroSection() {
                 <span className="text-[11px] sm:text-xs text-slate-300">Inspected Cars</span>
               </div>
               <div>
-                <span className="block text-xl lg:text-2xl font-extrabold text-[#D6A84F]">{cars.length}+</span>
+                <span className="block text-xl lg:text-2xl font-extrabold text-[#D6A84F]">7+</span>
                 <span className="text-[11px] sm:text-xs text-slate-300">Ready in Stock</span>
               </div>
               <div>
