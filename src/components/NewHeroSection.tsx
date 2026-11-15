@@ -7,11 +7,10 @@ import { Car } from '@/types/car';
 
 interface CarCardProps {
   car: Car;
+  cars:Car[];
 }
 
-
-
-export default function NewHeroSection({car}:CarCardProps) {
+export default function NewHeroSection({car,cars}:CarCardProps) {
 
     const primaryImage = car.images[0] || '/cars/car5/image_1.jpeg';
     const carFeatures = car.features.join(' • ');
@@ -95,7 +94,7 @@ export default function NewHeroSection({car}:CarCardProps) {
                 <span className="text-[11px] sm:text-xs text-slate-300">Inspected Cars</span>
               </div>
               <div>
-                <span className="block text-xl lg:text-2xl font-extrabold text-[#D6A84F]">7+</span>
+                <span className="block text-xl lg:text-2xl font-extrabold text-[#D6A84F]">{cars.length}+</span>
                 <span className="text-[11px] sm:text-xs text-slate-300">Ready in Stock</span>
               </div>
               <div>
