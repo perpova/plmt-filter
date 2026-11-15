@@ -11,7 +11,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-12 pb-16">
       {/*<HeroSection/>*/}
-      {featuredCar ? <NewHeroSection car={featuredCar} /> : <HeroSection />}
+      {featuredCar ? <NewHeroSection car={featuredCar} cars={cars}/> : <HeroSection />}
       <TrustBadges />
       <HomeInventory cars={cars} />
     </div>
