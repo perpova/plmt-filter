@@ -6,6 +6,7 @@ import { getWooProducts, WooProduct } from './wooWordpress';
 type WordPressVehicle = {
   id: number;
   slug: string;
+  link?: string;
   title?: { rendered?: string };
   content?: { rendered?: string };
   excerpt?: { rendered?: string };
@@ -19,6 +20,18 @@ type WordPressVehicle = {
     price?: string;
     regular_price?: string;
   }
+};
+
+export type VehicleSeoMetadata = {
+  title?: string;
+  description?: string;
+  image?: string;
+  structuredData?: Record<string, unknown>;
+};
+
+type RankMathHeadResponse = {
+  success?: boolean;
+  head?: string;
 };
 
 
@@ -135,6 +148,109 @@ function parseImages(image: unknown): string[]{
   }
 
   return []
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+function metaContent(head: string, key: 'name' | 'property', value: string): string | undefined {
+  const tags = head.match(/<meta\b[^>]*>/gi) ?? [];
+
+  for (const tag of tags) {
+    const attributes: Record<string, string> = {};
+    const attributePattern = /([^\s=/>]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = attributePattern.exec(tag)) !== null) {
+      attributes[match[1].toLowerCase()] = match[2] ?? match[3] ?? match[4] ?? '';
+    }
+
+    if (attributes[key]?.toLowerCase() === value.toLowerCase() && attributes.content) {
+      return decodeHtml(attributes.content);
+    }
+  }
+
+  return undefined;
+}
+
+function metadataFromRankMathHead(head: string): VehicleSeoMetadata {
+  const titleTag = head.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+  const schemaTag = head.match(
+    /<script\b(?=[^>]*\bclass=["'][^"']*\brank-math-schema\b[^"']*["'])[^>]*>([\s\S]*?)<\/script>/i,
+  )?.[1];
+  let structuredData: Record<string, unknown> | undefined;
+
+  if (schemaTag) {
+    const parsed: unknown = JSON.parse(schemaTag);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      throw new Error('Rank Math returned invalid structured data');
+    }
+    structuredData = parsed as Record<string, unknown>;
+  }
+
+  return {
+    title: titleTag
+      ? decodeHtml(titleTag.replace(/<[^>]*>/g, '').trim())
+      : metaContent(head, 'property', 'og:title'),
+    description:
+      metaContent(head, 'name', 'description') ??
+      metaContent(head, 'property', 'og:description'),
+    image: metaContent(head, 'property', 'og:image'),
+    structuredData,
+  };
+}
+
+export async function getVehicleSeoMetadata(id: string): Promise<VehicleSeoMetadata | undefined> {
+  if (!apiUrl) return undefined;
+
+  const productEndpoint = new URL(apiUrl);
+  productEndpoint.searchParams.set('rest_route', `/wp/v2/${productType}`);
+  productEndpoint.searchParams.set('slug', id);
+
+  const productResponse = await fetch(productEndpoint, {
+    next: { revalidate: 60 },
+  });
+  if (!productResponse.ok) {
+    throw new Error(
+      `WordPress vehicle SEO lookup failed (${productResponse.status} ${productResponse.statusText})`,
+    );
+  }
+
+  const products = (await productResponse.json()) as WordPressVehicle[];
+  const product = products.find((item) => item.slug.toLowerCase() === id.toLowerCase());
+  if (!product?.link) return undefined;
+
+  const headEndpoint = new URL(apiUrl);
+  headEndpoint.searchParams.set('rest_route', '/rankmath/v1/getHead');
+  headEndpoint.searchParams.set('url', product.link);
+
+  const headResponse = await fetch(headEndpoint, {
+    next: { revalidate: 60 },
+  });
+  if (!headResponse.ok) {
+    throw new Error(
+      `Rank Math metadata request failed (${headResponse.status} ${headResponse.statusText})`,
+    );
+  }
+
+  const result = (await headResponse.json()) as RankMathHeadResponse;
+  if (!result.success || typeof result.head !== 'string') {
+    throw new Error('Rank Math returned an invalid metadata response');
+  }
+
+  const metadata = metadataFromRankMathHead(result.head);
+  if (!metadata.title || !metadata.description) {
+    console.warn(`Rank Math returned no vehicle-specific title and description for "${id}"`);
+    return undefined;
+  }
+
+  return metadata;
 }
 
 
