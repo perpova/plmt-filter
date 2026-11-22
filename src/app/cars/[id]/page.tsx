@@ -3,9 +3,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import ImageGallery from '@/components/ImageGallery';
-import JsonLd from '@/components/JsonLd';
 import CarCard from '@/components/CarCard';
-import { getVehicleById, getVehicles } from '@/lib/wordpress';
+import { getVehicleById, getVehicleSeoMetadata, getVehicles } from '@/lib/wordpress';
 import { DEALERSHIP } from '@/data/dealership';
 import {
   ShieldCheck,
@@ -21,34 +20,65 @@ import {
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-//comment prior to new major commit
+
+function publicMediaUrl(value: string): string {
+  if (!value) return value;
+
+  try {
+    const url = new URL(value);
+    if (url.hostname === 'admin.priyankaracarsale.lk') {
+      return `https://priyankaracarsale.lk${url.pathname}${url.search}${url.hash}`;
+    }
+  } catch {
+    if (value.startsWith('/')) {
+      return `https://priyankaracarsale.lk${value}`;
+    }
+  }
+
+  return value;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const car = await getVehicleById(id);
-
   if (!car) {
     return {
       title: 'Vehicle Not Found',
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
-  const title = car.isSold
+  const rankMath = await getVehicleSeoMetadata(id);
+  const defaultTitle = car.isSold
     ? `Sold: ${car.year} ${car.make} ${car.model} in Matara`
     : `${car.year} ${car.make} ${car.model} for Sale in Matara`;
-  const description = car.isSold
+  const defaultDescription = car.isSold
     ? `${car.name} is marked sold by ${DEALERSHIP.altName} in Matara. View its specifications and contact the showroom about similar vehicles.`
     : `${car.name} for sale at ${DEALERSHIP.altName} in Matara. ${car.fuelType}, ${car.engineCc}cc ${car.transmission.toLowerCase()} vehicle. Price: ${car.priceDisplay}. Contact the showroom to arrange an inspection.`;
+  const title = rankMath?.title || defaultTitle;
+  const description = rankMath?.description || defaultDescription;
   const canonicalUrl = new URL(
     `/cars/${encodeURIComponent(car.id)}`,
     'https://priyankaracarsale.lk',
   ).toString();
-  const primaryImage = car.images[0]
-    ? new URL(car.images[0], 'https://priyankaracarsale.lk').toString()
-    : undefined;
+  const image = rankMath?.image || car.images[0];
+  const primaryImage = image ? publicMediaUrl(image) : undefined;
 
   return {
-    title,
+    title: rankMath?.title ? { absolute: title } : title,
     description,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+      },
+    },
     alternates: {
       canonical: canonicalUrl,
     },
@@ -76,16 +106,136 @@ export default async function CarDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const rankMath = await getVehicleSeoMetadata(id);
   const relatedCars = cars.filter((c) => c.id !== car.id).slice(0, 3);
   const priceText = car.isSold ? 'SOLD' : car.priceDisplay;
   const whatsappMsg = encodeURIComponent(
     `Hi Priyankara Car Sale, I am interested in buying the ${car.year} ${car.make} ${car.model} (${priceText}) listed on your website. Please share more details.`
   );
+  const canonicalUrl = `https://priyankaracarsale.lk/cars/${encodeURIComponent(car.id)}`;
+  const publicImages = car.images.map(publicMediaUrl);
+  const itemCondition =
+    car.condition === 'Used'
+      ? 'https://schema.org/UsedCondition'
+      : car.condition === 'Reconditioned'
+        ? 'https://schema.org/RefurbishedCondition'
+        : 'https://schema.org/NewCondition';
+  const offers = car.isSold
+    ? {
+        '@type': 'Offer',
+        url: canonicalUrl,
+        availability: 'https://schema.org/OutOfStock',
+        itemCondition,
+        seller: { '@id': 'https://priyankaracarsale.lk/#organization' },
+      }
+    : car.priceLkr
+      ? {
+          '@type': 'Offer',
+          url: canonicalUrl,
+          price: car.priceLkr,
+          priceCurrency: 'LKR',
+          availability: 'https://schema.org/InStock',
+          itemCondition,
+          seller: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        }
+      : {
+          '@type': 'Offer',
+          url: canonicalUrl,
+          availability: 'https://schema.org/InStock',
+          itemCondition,
+          seller: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        };
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://priyankaracarsale.lk/#organization',
+        name: DEALERSHIP.altName,
+        legalName: DEALERSHIP.legalName,
+        url: 'https://priyankaracarsale.lk',
+        telephone: `+94${DEALERSHIP.phoneHotlineRaw.slice(1)}`,
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: DEALERSHIP.address.street,
+          addressLocality: DEALERSHIP.address.city,
+          addressRegion: DEALERSHIP.address.district,
+          postalCode: DEALERSHIP.address.postalCode,
+          addressCountry: 'LK',
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://priyankaracarsale.lk/#website',
+        url: 'https://priyankaracarsale.lk',
+        name: DEALERSHIP.altName,
+        publisher: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        inLanguage: 'en-LK',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${canonicalUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://priyankaracarsale.lk/',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: car.name,
+            item: canonicalUrl,
+          },
+        ],
+      },
+      {
+        '@type': ['ItemPage', 'CollectionPage'],
+        '@id': `${canonicalUrl}#webpage`,
+        url: canonicalUrl,
+        name: `${car.year} ${car.make} ${car.model} for Sale in Matara`,
+        isPartOf: { '@id': 'https://priyankaracarsale.lk/#website' },
+        breadcrumb: { '@id': `${canonicalUrl}#breadcrumb` },
+        inLanguage: 'en-LK',
+      },
+      {
+        '@type': ['Product', 'Vehicle'],
+        '@id': `${canonicalUrl}#vehicle`,
+        name: car.name,
+        description: car.description,
+        brand: { '@type': 'Brand', name: car.make },
+        model: car.model,
+        vehicleModelDate: String(car.year),
+        mileageFromOdometer: car.mileage
+          ? {
+              '@type': 'QuantitativeValue',
+              value: car.mileage,
+              unitCode: 'KMT',
+            }
+          : undefined,
+        fuelType: car.fuelType,
+        vehicleTransmission: car.transmission,
+        vehicleEngine: car.engineCc
+          ? { '@type': 'EngineSpecification', engineDisplacement: `${car.engineCc}cc` }
+          : undefined,
+        category: car.bodyType,
+        image: publicImages,
+        itemCondition,
+        mainEntityOfPage: { '@id': `${canonicalUrl}#webpage` },
+        offers,
+      },
+    ],
+  };
 
   return (
     <div className="bg-[#F2F5F5] py-8">
-      {/* Schema.org JSON-LD Structured Data */}
-      <JsonLd type="Vehicle" car={car} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb & Navigation */}
