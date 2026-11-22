@@ -21,7 +21,7 @@ import {
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
+//comment prior to new major commit
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const car = await getVehicleById(id);
