@@ -139,7 +139,7 @@ export default function NewHeroSection({car,cars}:CarCardProps) {
                   {carFeatures || `${car.fuelType} • ${car.engineCc}cc • ${car.transmission}`}
                 </p>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm font-extrabold text-[#D6A84F]">Rs. {car.priceDisplay}</span>
+                  <span className="text-sm font-extrabold text-[#D6A84F]">{car.priceDisplay}</span>
                   <Link
                     href={`/cars/${car.id}`}
                     className="text-xs font-bold text-[#172325] bg-[#D6A84F] hover:bg-[#A77A25] hover:text-white px-3.5 py-1.5 rounded-lg transition-colors shadow-sm"
