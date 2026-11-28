@@ -1,5 +1,6 @@
 import { Car } from '@/types/car';
 import { DEALERSHIP } from '@/data/dealership';
+import { url } from 'inspector';
 
 interface JsonLdProps {
   type: 'AutoDealer' | 'Vehicle';
@@ -51,6 +52,7 @@ export default function JsonLd({ type, car, baseUrl = 'https://priyankaracarsale
     );
   }
 
+  
   if (type === 'Vehicle' && car) {
     const pageUrl = new URL(`/cars/${encodeURIComponent(car.id)}`, baseUrl).toString();
     const breadcrumbId = `${pageUrl}#breadcrumb`;
@@ -146,6 +148,22 @@ export default function JsonLd({ type, car, baseUrl = 'https://priyankaracarsale
             },
           ],
         },
+        {
+          '@type':'ContactPage',
+              url: 'https://priyankaracarsale.lk/contact',
+      name: 'Contact Priyankara Car Sale',
+      mainEntity: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        },
+        {
+          '@type':'CollectionPage',
+          url:'https://priyankaracarsale.lk/contact',
+          name: 'Search for Your Car in Priyankara Car Sale Inventory',
+          mainEntity: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        },{
+          '@type':'AboutPage',
+          url:'https://priyankaracarsale.lk/about',
+          mainEntity: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        }
       ],
     };
 
