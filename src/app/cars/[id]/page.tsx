@@ -6,6 +6,7 @@ import ImageGallery from '@/components/ImageGallery';
 import CarCard from '@/components/CarCard';
 import { getVehicleById, getVehicleSeoMetadata, getVehicles } from '@/lib/wordpress';
 import { DEALERSHIP } from '@/data/dealership';
+import { publicMediaUrl } from '@/lib/publicMediaUrl';
 import {
   ShieldCheck,
   Check,
@@ -19,23 +20,6 @@ import {
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-function publicMediaUrl(value: string): string {
-  if (!value) return value;
-
-  try {
-    const url = new URL(value);
-    if (url.hostname === 'admin.priyankaracarsale.lk') {
-      return `https://priyankaracarsale.lk${url.pathname}${url.search}${url.hash}`;
-    }
-  } catch {
-    if (value.startsWith('/')) {
-      return `https://priyankaracarsale.lk${value}`;
-    }
-  }
-
-  return value;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
