@@ -33,6 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
+{/*
+    const vehiclePages: MetadataRoute.Sitemap = cars.map((car) => ({
+    url: new URL(`/cars/${encodeURIComponent(car.id)}`, baseUrl).toString(),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+ */}
 
   return [...staticPages, ...vehiclePages];
 }
