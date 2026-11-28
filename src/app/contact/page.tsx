@@ -4,17 +4,78 @@ import { DEALERSHIP } from '@/data/dealership';
 import { MapPin, Phone, Mail, Clock, MessageSquare, Send, Building } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Contact Us',
+  title: `Contact ${DEALERSHIP.altName} in Matara | Phone & Location`,
   description:
     'Contact Priyankara Lanka Motor Traders (Pvt) Ltd (Priyankara Car Sale) at 60, Akuressa Road, Isadeen Town, Matara 81000. Hotline: 077 78 78 201, Tel: 041 22 32 282.',
   alternates: {
     canonical: '/contact',
   },
+  openGraph: {
+    title: `Contact ${DEALERSHIP.altName} in Matara | Phone & Location`,
+    description:
+      'Call, message, or visit Priyankara Car Sale at 60, Akuressa Road, Isadeen Town, Matara, Sri Lanka.',
+    url: '/contact',
+    type: 'website',
+    images: [
+      {
+        url: '/Priyankara-Lanka.jpg',
+        width: 1200,
+        height: 630,
+        alt: `${DEALERSHIP.altName} showroom in Matara`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Contact ${DEALERSHIP.altName} in Matara | Phone & Location`,
+    description:
+      'Call, message, or visit Priyankara Car Sale at 60, Akuressa Road, Isadeen Town, Matara, Sri Lanka.',
+    images: ['/Priyankara-Lanka.jpg'],
+  },
 };
 
 export default function ContactPage() {
+  const pageUrl = 'https://priyankaracarsale.lk/contact';
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'ContactPage',
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: `Contact ${DEALERSHIP.altName}`,
+        description: `Contact or visit ${DEALERSHIP.altName} in Matara, Sri Lanka.`,
+        mainEntity: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        inLanguage: 'en-LK',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://priyankaracarsale.lk/',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Contact',
+            item: pageUrl,
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <div className="py-12 bg-[#F2F5F5] space-y-12">
+    <div className="py-12 bg-[#F2F5F5]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
       {/* Header Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-10">
