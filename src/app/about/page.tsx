@@ -6,17 +6,78 @@ import { DEALERSHIP } from '@/data/dealership';
 import { Award, CheckCircle2, MessageSquare, Phone, MapPin } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'About Us',
+  title: `About ${DEALERSHIP.altName} | Matara Car Dealership`,
   description:
     "Learn about Priyankara Lanka Motor Traders (Pvt) Ltd (Priyankara Car Sale), located at 60, Akuressa Road, Isadeen Town, Matara 81000, Sri Lanka.",
   alternates: {
     canonical: '/about',
   },
+  openGraph: {
+    title: `About ${DEALERSHIP.altName} | Matara Car Dealership`,
+    description:
+      `Learn about ${DEALERSHIP.legalName}, a vehicle dealership in Matara, Sri Lanka.`,
+    url: '/about',
+    type: 'website',
+    images: [
+      {
+        url: '/Priyankara-Lanka.jpg',
+        width: 1200,
+        height: 630,
+        alt: `${DEALERSHIP.altName} in Matara, Sri Lanka`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `About ${DEALERSHIP.altName} | Matara Car Dealership`,
+    description:
+      `Learn about ${DEALERSHIP.legalName}, a vehicle dealership in Matara, Sri Lanka.`,
+    images: ['/Priyankara-Lanka.jpg'],
+  },
 };
 
 export default function AboutPage() {
+  const pageUrl = 'https://priyankaracarsale.lk/about';
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'AboutPage',
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: `About ${DEALERSHIP.altName}`,
+        description: `Learn about ${DEALERSHIP.legalName}, a vehicle dealership in Matara, Sri Lanka.`,
+        about: { '@id': 'https://priyankaracarsale.lk/#organization' },
+        inLanguage: 'en-LK',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://priyankaracarsale.lk/',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'About',
+            item: pageUrl,
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <div className="space-y-12 py-10 bg-[#F2F5F5]">
+    <div className="py-10 bg-[#F2F5F5]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
       {/* Header Banner */}
       <div className="bg-[#172325] text-white py-16 border-b border-[#1F7778]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
