@@ -1,6 +1,7 @@
 import 'server-only';
 import { CARS } from '@/data/cars';
 import type { Car } from '@/types/car';
+import { publicMediaPath } from './publicMediaUrl';
 import { getWooProducts, WooProduct } from './wooWordpress';
 
 type WordPressVehicle = {
@@ -206,6 +207,37 @@ function metadataFromRankMathHead(head: string): VehicleSeoMetadata {
   };
 }
 
+export async function getHomepageSeoMetadata(): Promise<VehicleSeoMetadata | undefined> {
+  if (!apiUrl) return undefined;
+
+  const homepageUrl = `${apiUrl}/`;
+  const endpoint = new URL(apiUrl);
+  endpoint.searchParams.set('rest_route', '/rankmath/v1/getHead');
+  endpoint.searchParams.set('url', homepageUrl);
+
+  const response = await fetch(endpoint, {
+    next: { revalidate: 60 },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Rank Math homepage metadata request failed (${response.status} ${response.statusText})`,
+    );
+  }
+
+  const result = (await response.json()) as RankMathHeadResponse;
+  if (!result.success || typeof result.head !== 'string') {
+    throw new Error('Rank Math returned an invalid homepage metadata response');
+  }
+
+  const metadata = metadataFromRankMathHead(result.head);
+  if (!metadata.description) {
+    console.warn('Rank Math returned no homepage description');
+    return undefined;
+  }
+
+  return metadata;
+}
+
 export async function getVehicleSeoMetadata(id: string): Promise<VehicleSeoMetadata | undefined> {
   if (!apiUrl) return undefined;
 
@@ -293,7 +325,7 @@ const images =
     
     features,
     description: stripHtml(text(field(post, 'description'), post.content?.rendered || post.excerpt?.rendered || '')),
-    images,
+    images: images.map(publicMediaPath),
     featured: post.class_list
       ? post.class_list.includes('featured')
       : woo?.featured ?? boolean(field(post, 'featured')),
